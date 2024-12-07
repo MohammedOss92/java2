@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Voice Translator</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="action_delete_title">Delete confirmation</string>
+    <string name="action_delete_msg">Are you sure?</string>
+    <string name="connection_faild">Connection faild!</string>
+    <string name="clear_all">Clear all translations</string>
+    <string name="ad_unit_id">ca-app-pub-5551791604006396/8842869069</string>
+
+</resources>
