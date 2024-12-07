@@ -1,0 +1,140 @@
+import retrofit2.Call;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
+
+public interface TranslateService {
+
+    @GET("translate_a/t")
+    Call<TranslationResponse> translate(
+        @Query("client") String client,
+        @Query("q") String text,
+        @Query("hl") String targetLanguage,
+        @Query("sl") String sourceLanguage,
+        @Query("tl") String targetLanguageCode,
+        @Query("ie") String inputEncoding,
+        @Query("oe") String outputEncoding,
+        @Query("multires") int multires
+    );
+}
+
+
+import com.google.gson.annotations.SerializedName;
+import java.util.List;
+
+public class TranslationResponse {
+
+    @SerializedName("sentences")
+    private List<Sentence> sentences;
+
+    public List<Sentence> getSentences() {
+        return sentences;
+    }
+
+    public static class Sentence {
+        @SerializedName("trans")
+        private String translation;
+
+        public String getTranslation() {
+            return translation;
+        }
+    }
+}
+
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
+public class Translate extends AppCompatActivity {
+
+    private Retrofit retrofit;
+    private TranslateService translateService;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_translate);
+
+        retrofit = new Retrofit.Builder()
+                .baseUrl("http://translate.google.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        translateService = retrofit.create(TranslateService.class);
+
+        // Your existing setup code...
+
+        translate.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!TextUtils.isEmpty(text.getText().toString())) {
+                    if (isOnline()) {
+                        // Replace the AsyncTask call with Retrofit
+                        translateText();
+                    } else {
+                        Toast.makeText(getApplicationContext(), R.string.connection_faild, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        });
+    }
+
+    private void translateText() {
+        String sourceLang = langs.get(from.getSelectedItem().toString());
+        String targetLang = langs.get(to.getSelectedItem().toString());
+        String textToTranslate = text.getText().toString();
+
+        Call<TranslationResponse> call = translateService.translate(
+                "p",  // Client
+                textToTranslate, 
+                targetLang, 
+                sourceLang, 
+                targetLang, 
+                "UTF-8", 
+                "UTF-8", 
+                0);
+
+        call.enqueue(new retrofit2.Callback<TranslationResponse>() {
+            @Override
+            public void onResponse(Call<TranslationResponse> call, retrofit2.Response<TranslationResponse> response) {
+                if (response.isSuccessful()) {
+                    TranslationResponse translationResponse = response.body();
+                    String result = "";
+
+                    if (translationResponse != null) {
+                        for (TranslationResponse.Sentence sentence : translationResponse.getSentences()) {
+                            result += sentence.getTranslation();
+                        }
+                    }
+
+                    // Handle the translated text
+                    updateTranslation(result);
+                } else {
+                    Toast.makeText(getApplicationContext(), "Translation failed", Toast.LENGTH_SHORT).show();
+                }
+
+                translatePro.setVisibility(View.INVISIBLE);
+                translate.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onFailure(Call<TranslationResponse> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                translatePro.setVisibility(View.INVISIBLE);
+                translate.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    private void updateTranslation(String translation) {
+        int id = rand.nextInt();
+        db.insertResult(id, from.getSelectedItem().toString(), to.getSelectedItem().toString(),
+                text.getText().toString(), translation, langs.get(from.getSelectedItem().toString()),
+                langs.get(to.getSelectedItem().toString()));
+
+        results.add(new ResultRow(id, from.getSelectedItem().toString(), to.getSelectedItem().toString(),
+                text.getText().toString(), translation, langs.get(to.getSelectedItem().toString()),
+                langs.get(from.getSelectedItem().toString())));
+
+        resultAdapter.notifyDataSetChanged();
+        resultList.setSelection(resultList.getAdapter().getCount() - 1);
+    }
+}
