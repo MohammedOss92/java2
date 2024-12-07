@@ -138,3 +138,37 @@ public class Translate extends AppCompatActivity {
         resultList.setSelection(resultList.getAdapter().getCount() - 1);
     }
 }
+
+
+
+/////////////
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+public void translateText(String text, String sourceLang, String targetLang) {
+    TranslationService service = RetrofitInstance.getRetrofitInstance().create(TranslationService.class);
+
+    String apiKey = "YOUR_API_KEY"; // ضع مفتاح API هنا
+
+    Call<TranslationResponse> call = service.translateText(apiKey, text, sourceLang, targetLang);
+
+    call.enqueue(new Callback<TranslationResponse>() {
+        @Override
+        public void onResponse(Call<TranslationResponse> call, Response<TranslationResponse> response) {
+            if (response.isSuccessful()) {
+                String translatedText = response.body().getTranslatedText();
+                // عرض النص المترجم
+                Log.d("Translation", translatedText);
+            } else {
+                Log.e("Error", "Translation failed");
+            }
+        }
+
+        @Override
+        public void onFailure(Call<TranslationResponse> call, Throwable t) {
+            Log.e("Error", t.getMessage());
+        }
+    });
+}
+
